@@ -25,16 +25,12 @@ class StartInstances
     instance_vmx = Dir[ "#{instance_dir}/*.vmx" ].first
     vm2_support_file = "#{instance_dir}/vm2-support.conf"
     FileUtils.rm_f( vm2_support_file )
-    puts "starting with #{instance_vmx}"
-    puts `#{VM2.vmrun_path} start #{instance_vmx} nogui`
+    `#{VM2.vmrun_path} start #{instance_vmx} nogui`
     if ( File.exist?( "#{instance_dir}/vm2-user-data.conf" ) )
-      puts "#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromHostToGuest #{instance_vmx} #{instance_dir}/vm2-user-data.conf /etc/vm2-user-data.conf"
-      puts `#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromHostToGuest #{instance_vmx} #{instance_dir}/vm2-user-data.conf /etc/vm2-user-data.conf`
+      `#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromHostToGuest #{instance_vmx} #{instance_dir}/vm2-user-data.conf /etc/vm2-user-data.conf`
     end
-    puts "#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance_vmx} /sbin/vm2-support"
-    puts `#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance_vmx} /sbin/vm2-support`
-    puts "#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromGuestToHost #{instance_vmx} /etc/vm2-support.conf #{vm2_support_file}"
-    puts `#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromGuestToHost #{instance_vmx} /etc/vm2-support.conf #{vm2_support_file}`
+    `#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance_vmx} /sbin/vm2-support`
+    `#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromGuestToHost #{instance_vmx} /etc/vm2-support.conf #{vm2_support_file}`
   end
 
   def self.parse(args)

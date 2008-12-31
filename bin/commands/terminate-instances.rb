@@ -24,7 +24,6 @@ class TerminateInstances
   end
 
   def terminate_instance(instance_id)
-    puts "waiting"
     instance_dir = "#{VM2.instance_repository_path}/#{instance_id}"
     instance_vmx = Dir[ "#{instance_dir}/*.vmx" ].first
     running = true

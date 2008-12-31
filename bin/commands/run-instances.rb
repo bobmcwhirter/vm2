@@ -80,11 +80,10 @@ class RunInstances
   end
 
   def expand_bundle(vmi_bundle, instance_dir)
-    puts "expanding to #{instance_dir}"
     Dir.chdir( instance_dir ) do
       Open3.popen3( "tar zxvf #{vmi_bundle} --strip-components 1" ) do |stdin, stdout, stderr|
         while ( ( l = stdout.gets ) != nil )
-          puts l
+          # nothing
         end
       end
     end
