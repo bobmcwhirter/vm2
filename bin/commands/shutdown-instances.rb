@@ -8,33 +8,23 @@ require 'sha1'
 require 'yaml'
 require 'open3'
 
-require 'shutdown-instances'
-
-class TerminateInstances
+class ShutdownInstances
 
   def initialize(opts={})
     @instance_ids = opts.instance_ids || []
   end
 
   def run
-    ShutdownInstances.new( OpenStruct.new( :instance_ids=>@instance_ids ) ).run
     @instance_ids.each do |instance_id|
-      terminate_instance( instance_id )
+      shutdown_instance( instance_id )
     end
   end
 
-  def terminate_instance(instance_id)
-    puts "waiting"
+  def shutdown_instance(instance_id)
     instance_dir = "#{VM2.instance_repository_path}/#{instance_id}"
     instance_vmx = Dir[ "#{instance_dir}/*.vmx" ].first
-    running = true
-    while ( running )
-      `#{VM2.vmrun_path} unpause #{instance_vmx}`
-      ( running = false ) unless ( $? == 0 )
-      sleep 1
-    end
-    puts "terminating #{instance_dir}"
-    FileUtils.rm_rf instance_dir
+    puts "shutting down with #{instance_vmx}"
+    `#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance_vmx} /sbin/shutdown -h now`
   end
 
   def self.parse(args)
@@ -42,7 +32,7 @@ class TerminateInstances
     options.instance_ids = []
 
     opts = OptionParser.new do |opts|
-      opts.banner = "Usage: vm2 terminate-instances <instance-id> [ instance-id ]"
+      opts.banner = "Usage: vm2 shutdown-instances <instance-id> [ instance-id ]"
 
       opts.separator ""
       opts.separator "Common options:"

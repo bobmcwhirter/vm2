@@ -8,6 +8,8 @@ require 'sha1'
 require 'yaml'
 require 'open3'
 
+require 'start-instances'
+
 class RunInstances
 
   def initialize(opts={})
@@ -29,28 +31,39 @@ class RunInstances
 
     instances = [] 
     1.upto( @instance_count ) do |i|
-      instances << prepare_instance( vmi_bundle, i ) 
+      instances << prepare_instance( @vmi, vmi_bundle, i ) 
     end
 
+    threads = []
     instances.each do |instance|
-      start_instance( instance )
+      threads << start_instance( instance )
     end
 
+    threads.each{|t| t.join}
   end
 
   def start_instance(instance)
-    puts "starting with #{instance.vmx}"
-    puts `#{VM2.vmrun_path} start #{instance.vmx} nogui`
-    puts "#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance.vmx} /sbin/vm2-support"
-    puts `#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance.vmx} /sbin/vm2-support`
-    puts "#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromGuestToHost #{instance.vmx} /etc/vm2-support.conf vm2-support-#{instance.id}.conf"
-    puts `#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromGuestToHost #{instance.vmx} /etc/vm2-support.conf vm2-support-#{instance.id}.conf`
+    Thread.new() {
+      StartInstances.new( OpenStruct.new( :instance_ids=>[ instance.instance_id ] ) ).run
+    }
   end
 
-  def prepare_instance(vmi_bundle, i) 
+  def prepare_instance(vmi, vmi_bundle, i) 
     instance_id = create_instance_id(vmi_bundle, i)
 
     instance_dir = VM2.instance_repository_path + "/#{instance_id}"
+    FileUtils.mkdir_p( instance_dir )
+
+    image_conf = {
+      :vmi=>vmi,
+      :created=>Time.now,
+      :user=>ENV['USER']
+    }
+    File.open( "#{instance_dir}/vm2-image.conf", 'w' ) { |f| f.write( YAML.dump( image_conf ) ) }
+
+    unless ( @user_data.nil? )
+      File.open( "#{instance_dir}/vm2-user-data.conf", 'w' ) { |f| f.write( @user_data ) }
+    end
 
     expand_bundle( vmi_bundle, instance_dir )
 
@@ -60,7 +73,7 @@ class RunInstances
       return
     end
 
-    instance_data = OpenStruct.new( :id=>instance_id, :vmx=>instance_vmx )
+    instance_data = OpenStruct.new( :dir=>instance_dir, :instance_id=>instance_id, :vmx=>instance_vmx )
   end
 
   def inject_user_data(instance_vmx)
@@ -68,7 +81,6 @@ class RunInstances
 
   def expand_bundle(vmi_bundle, instance_dir)
     puts "expanding to #{instance_dir}"
-    FileUtils.mkdir_p( instance_dir )
     Dir.chdir( instance_dir ) do
       Open3.popen3( "tar zxvf #{vmi_bundle} --strip-components 1" ) do |stdin, stdout, stderr|
         while ( ( l = stdout.gets ) != nil )
@@ -76,6 +88,7 @@ class RunInstances
         end
       end
     end
+    File.open( "#{instance_dir}/vm2.prepared", 'w' ) {|f| f.puts( Time.now )}
   end
 
   def create_instance_id(vmi_bundle, i)
