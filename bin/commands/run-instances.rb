@@ -27,18 +27,47 @@ class RunInstances
       return
     end
 
+    instances = [] 
     1.upto( @instance_count ) do |i|
-      launch_instance( vmi_bundle, i )
+      instances << prepare_instance( vmi_bundle, i ) 
     end
+
+    instances.each do |instance|
+      start_instance( instance )
+    end
+
   end
 
-  def launch_instance(vmi_bundle, i)
+  def start_instance(instance)
+    puts "starting with #{instance.vmx}"
+    puts `#{VM2.vmrun_path} start #{instance.vmx} nogui`
+    puts "#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance.vmx} /sbin/vm2-support"
+    puts `#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance.vmx} /sbin/vm2-support`
+    puts "#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromGuestToHost #{instance.vmx} /etc/vm2-support.conf vm2-support-#{instance.id}.conf"
+    puts `#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromGuestToHost #{instance.vmx} /etc/vm2-support.conf vm2-support-#{instance.id}.conf`
+  end
+
+  def prepare_instance(vmi_bundle, i) 
     instance_id = create_instance_id(vmi_bundle, i)
-    expand_bundle( vmi_bundle, instance_id )
+
+    instance_dir = VM2.instance_repository_path + "/#{instance_id}"
+
+    expand_bundle( vmi_bundle, instance_dir )
+
+    instance_vmx = Dir[ "#{instance_dir}/*.vmx" ].first
+    if ( instance_vmx.nil? )
+      puts "Error: unable to locate .vmx in #{instance_dir}"
+      return
+    end
+
+    instance_data = OpenStruct.new( :id=>instance_id, :vmx=>instance_vmx )
   end
 
-  def expand_bundle(vmi_bundle, instance_id)
-    instance_dir = VM2.instance_repository_path + "/#{instance_id}"
+  def inject_user_data(instance_vmx)
+  end
+
+  def expand_bundle(vmi_bundle, instance_dir)
+    puts "expanding to #{instance_dir}"
     FileUtils.mkdir_p( instance_dir )
     Dir.chdir( instance_dir ) do
       Open3.popen3( "tar zxvf #{vmi_bundle} --strip-components 1" ) do |stdin, stdout, stderr|

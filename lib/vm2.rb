@@ -4,8 +4,12 @@ require 'yaml'
 
 module VM2
 
+  def self.vmrun_path
+    '/Library/Application\ Support/VMware\ Fusion/vmrun'
+  end
+
   def self.repository_path
-    ENV['HOME'] + '/.vm2/'
+    ENV['HOME'] + '/.vm2'
   end
 
   def self.image_repository_path
