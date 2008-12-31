@@ -23,4 +23,12 @@ if ( ARGV.size > 0 )
   else
     puts "unknown command: #{cmd}"
   end
+else
+  puts "usage: vm2 COMMAND [ARGS]"
+  puts ""
+  puts "The most commonly used commands are:"
+  puts "  register         Register an image in VM2"
+  puts "  deregister       Deregister an image in VM2"
+  puts "  describe-images  Describe images registered in VM2"
+  puts ""
 end
