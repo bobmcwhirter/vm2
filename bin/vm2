@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+$: << File.dirname( __FILE__ ) + "/commands/"
+$: << File.dirname( __FILE__ ) + "/../lib"
+
+require 'vm2'
+
+VM2.prepare_repository
+
+if ( ARGV.size > 0 )
+  cmd = ARGV.shift
+  class_name = cmd.capitalize
+  while ( class_name =~ /-/ )
+    class_name = class_name.sub( /(-([a-z]))/ ) { |s| s[1..-1].upcase }
+  end
+  cmd_file = File.dirname( __FILE__ ) + "/commands/#{cmd}.rb"
+  if ( File.exist?( cmd_file ) )
+    require cmd
+    cmd_class = eval class_name
+    opts = cmd_class.parse( ARGV )
+    cmd = cmd_class.new( opts )
+    cmd.run
+  else
+    puts "unknown command: #{cmd}"
+  end
+end
