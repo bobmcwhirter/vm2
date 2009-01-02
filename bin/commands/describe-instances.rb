@@ -27,12 +27,12 @@ class DescribeInstances
   end
 
   def print_header
-    puts "Instance ID   VMI             State       IP Address        User                 Created"
-    puts "---------------------------------------------------------------------------------------------------------------"
+    puts "Instance ID   VMI             Name                                      State       IP Address        User                 Created"
+    puts "---------------------------------------------------------------------------------------------------------------------------------------------------------"
   end
 
   def print_footer
-    puts "---------------------------------------------------------------------------------------------------------------"
+    puts "---------------------------------------------------------------------------------------------------------------------------------------------------------"
   end
 
   def print_instance_line(instance_dir)
@@ -40,13 +40,15 @@ class DescribeInstances
     state = state( instance_dir )
     ip_address = nil
     image_conf = YAML.load_file( "#{instance_dir}/vm2-image.conf" )
+    image_repo_data = VM2.image_repository_data 
+    vmi = image_conf[:vmi]
     if ( state == 'RUNNING' )
       ip_address = ip_address( instance_dir ) 
     end
     if ( state == 'RUNNING' && ip_address.nil? )
       state = 'STARTING'
     end
-    puts "#{instance_id}  #{image_conf[:vmi]}  #{sprintf( '%-10s', state)}  #{sprintf("%-16s", ip_address||'-')}  #{sprintf("%-20s", image_conf[:user][0,20])} #{image_conf[:created]}"
+    puts "#{instance_id}  #{image_conf[:vmi]}  #{sprintf("%-40s", image_repo_data[vmi]['name'][0,40])}  #{sprintf( '%-10s', state)}  #{sprintf("%-16s", ip_address||'-')}  #{sprintf("%-20s", image_conf[:user][0,20])} #{image_conf[:created]}"
   end
 
   def state(instance_dir)
