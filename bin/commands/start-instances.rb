@@ -10,6 +10,8 @@ require 'open3'
 
 class StartInstances
 
+  ROOT_PASSWORD='oddthesis'
+
   def initialize(opts={})
     @instance_ids = opts.instance_ids || []
   end
@@ -27,10 +29,10 @@ class StartInstances
     FileUtils.rm_f( vm2_support_file )
     `#{VM2.vmrun_path} start #{instance_vmx} nogui`
     if ( File.exist?( "#{instance_dir}/vm2-user-data.conf" ) )
-      `#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromHostToGuest #{instance_vmx} #{instance_dir}/vm2-user-data.conf /etc/vm2-user-data.conf`
+      `#{VM2.vmrun_path} -gu root -gp #{ROOT_PASSWORD} copyFileFromHostToGuest #{instance_vmx} #{instance_dir}/vm2-user-data.conf /etc/vm2-user-data.conf`
     end
-    `#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance_vmx} /sbin/vm2-support`
-    `#{VM2.vmrun_path} -gu root -gp thincrust copyFileFromGuestToHost #{instance_vmx} /etc/vm2-support.conf #{vm2_support_file}`
+    `#{VM2.vmrun_path} -gu root -gp #{ROOT_PASSWORD} runProgramInGuest #{instance_vmx} /sbin/vm2-support`
+    `#{VM2.vmrun_path} -gu root -gp #{ROOT_PASSWORD} copyFileFromGuestToHost #{instance_vmx} /etc/vm2-support.conf #{vm2_support_file}`
   end
 
   def self.parse(args)

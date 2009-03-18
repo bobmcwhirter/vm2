@@ -10,6 +10,8 @@ require 'open3'
 
 class ShutdownInstances
 
+  ROOT_PASSWORD='oddthesis'
+
   def initialize(opts={})
     @instance_ids = opts.instance_ids || []
   end
@@ -24,7 +26,7 @@ class ShutdownInstances
     instance_dir = "#{VM2.instance_repository_path}/#{instance_id}"
     instance_vmx = Dir[ "#{instance_dir}/*.vmx" ].first
     puts "shutting down with #{instance_vmx}"
-    `#{VM2.vmrun_path} -gu root -gp thincrust runProgramInGuest #{instance_vmx} /sbin/shutdown -h now`
+    `#{VM2.vmrun_path} -gu root -gp #{ROOT_PASSWORD} runProgramInGuest #{instance_vmx} /sbin/shutdown -h now`
   end
 
   def self.parse(args)
